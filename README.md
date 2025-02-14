@@ -1,14 +1,11 @@
-# FGMovement
+# Daft Mover
 
-Movement System being used for Factory Game. It's a work in progress but feel free to use it on your Unreal Game or for learning. It will become more battle tested as time goes on.
+**Supports Unreal Engine 5.5**
 
-## Important Notices
+**! Main is not currently stable, use with extreme caution. For stable version, use the FGMovement branch !**
 
-**You must be on Unreal Engine 5.4 or above to use FGMovement.**
+Custom implementation ontop of Mover.
 
-The following project config (Independent Interpolation) is currently required in `Config/DefaultNetworkPrediction.ini` to fix jittering:
-```
-[/Script/NetworkPrediction.NetworkPredictionSettingsObject]
-Settings=(PreferredTickingPolicy=Independent,ReplicatedManagerClassOverride=None,FixedTickFrameRate=60,bForceEngineFixTickForcePhysics=True,SimulatedProxyNetworkLOD=ForwardPredict,FixedTickInterpolationBufferedMS=100,IndependentTickInterpolationBufferedMS=100,IndependentTickInterpolationMaxBufferedMS=250,FixedTickInputSendCount=6,IndependentTickInputSendCount=6,MaximumRemoteInputFaultLimit=6)
-```
-![image](https://github.com/daftsoftware/FGMovement/assets/9282017/69601534-a7be-4964-a175-ecc37f1f3ed9)
+Worth noting that this plugin was originally made when Mover was still on main, so needless to say since this time there has been some extremely breaking API changes, if you used this plugin previously and are now upgrading to newer versions - expect that almost everything will be broken and you have a lot of work to do, as such the old version of this plugin "FGMovement" for 5.4 has been deprecated under a branch, going forward main will contain "Daft Mover" which you can consider the 2.0 of the original plugin with the severely breaking changes bringing it up to compatibility with the newer API.
+
+This Mover implementation is primarily being used to Pioneer a custom Kinematic Liason closer to the original CMC, instead of the default option for kinematic movement which is the Network Prediction Liason. The primary reason that this repository went stale for a while is because frankly, I wasn't very impressed with the performance of NPP, and the development on it didn't look very promising at all. However I LOVE Mover, it could be something great but feels weighed down by the baggage of a failed experiment. As such this repo will be trying a very destructive method to solve this issue. It will definitely be opinionated. It will probably be spicy. Feel free to use it.
