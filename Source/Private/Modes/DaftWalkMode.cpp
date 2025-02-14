@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Daft Software
+// Copyright (c) 2025 Daft Software
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -7,14 +7,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "Modes/FGWalkMode.h"
-#include "Core/FGMovementUtils.h"
-#include "Core/FGDataModel.h"
-#include "LayeredMoves/FGLayeredMove_Crouch.h"
-#include "Transitions/FGCrouchCheck.h"
-#include "FGMovementCVars.h"
-#include "Core/FGMoverComponent.h"
-#include "FGMovementDefines.h"
+#include "Modes/DaftWalkMode.h"
+#include "Core/DaftMovementUtils.h"
+#include "Core/DaftDataModel.h"
+#include "DaftMoverCVars.h"
+#include "Core/DaftMoverComponent.h"
+#include "DaftMoverDefines.h"
 
 #include "DefaultMovementSet/LayeredMoves/BasicLayeredMoves.h"
 #include "MoveLibrary/MovementUtils.h"
@@ -23,11 +21,10 @@
 #include "Components/CapsuleComponent.h"
 #include "Logging/StructuredLog.h"
 
-#include UE_INLINE_GENERATED_CPP_BY_NAME(FGWalkMode)
+#include UE_INLINE_GENERATED_CPP_BY_NAME(DaftWalkMode)
 
-UFGWalkMode::UFGWalkMode()
+UDaftWalkMode::UDaftWalkMode()
 {
-	Transitions.Add(CreateDefaultSubobject<UFGCrouchCheck>(TEXT("DuckCheck")));
 }
 
 /**
@@ -40,16 +37,16 @@ UFGWalkMode::UFGWalkMode()
  * @param TimeStep - The time step for this substep.
  * @param OutProposedMove - The proposed move to provide to the next tick that runs.
  */
-void UFGWalkMode::OnGenerateMove(const FMoverTickStartData& StartState, const FMoverTimeStep& TimeStep, FProposedMove& OutProposedMove) const
+void UDaftWalkMode::OnGenerateMove(const FMoverTickStartData& StartState, const FMoverTimeStep& TimeStep, FProposedMove& OutProposedMove) const
 {
-	const FFGMoverInputCmd* CharacterInputs = StartState.InputCmd.InputCollection.FindDataByType<FFGMoverInputCmd>();
+	const FDaftMoverInputCmd* CharacterInputs = StartState.InputCmd.InputCollection.FindDataByType<FDaftMoverInputCmd>();
 	const FMoverDefaultSyncState* StartingSyncState = StartState.SyncState.SyncStateCollection.FindDataByType<FMoverDefaultSyncState>();
 	check(StartingSyncState);
 
 	OutProposedMove.LinearVelocity = StartingSyncState->GetVelocity_WorldSpace();
 	const float DeltaTime = TimeStep.StepMs * 0.001f;
 	
-	UFGMovementUtils::ApplyDamping(CastChecked<UFGMoverComponent>(GetMoverComponent()), OutProposedMove, DeltaTime);
+	UDaftMovementUtils::ApplyDamping(CastChecked<UDaftMoverComponent>(GetMoverComponent()), OutProposedMove, DeltaTime);
 
 	constexpr float TurningRateLimit = 5000.0f;
 	
@@ -72,7 +69,7 @@ void UFGWalkMode::OnGenerateMove(const FMoverTickStartData& StartState, const FM
 	FVector ProjectedMove = FVector::VectorPlaneProject(MoveInputWS, FloorResult.HitResult.ImpactNormal);
 	ProjectedMove.Normalize();
 
-	UFGMovementUtils::ApplyAcceleration(CastChecked<UFGMoverComponent>(GetMoverComponent()), OutProposedMove, DeltaTime, ProjectedMove, FG::CVars::GroundSpeed);
+	UDaftMovementUtils::ApplyAcceleration(CastChecked<UDaftMoverComponent>(GetMoverComponent()), OutProposedMove, DeltaTime, ProjectedMove, Daft::CVars::GroundSpeed);
 
     UE_LOGFMT(LogMover, Display, "Linear Velocity: {LinVel}", *OutProposedMove.LinearVelocity.ToString());
 }
@@ -86,14 +83,14 @@ void UFGWalkMode::OnGenerateMove(const FMoverTickStartData& StartState, const FM
  * @param Params - Input parameters for the movement tick.
  * @param OutputState - The final state of the mover after the tick.
  */
-void UFGWalkMode::OnSimulationTick(const FSimulationTickParams& Params, FMoverTickEndData& OutputState)
+void UDaftWalkMode::OnSimulationTick(const FSimulationTickParams& Params, FMoverTickEndData& OutputState)
 {
 	const FMoverTickStartData& StartState = Params.StartState;
-	USceneComponent* UpdatedComponent = Params.UpdatedComponent;
-	UPrimitiveComponent* UpdatedPrimitive = Params.UpdatedPrimitive;
+	USceneComponent* UpdatedComponent = Params.MovingComps.UpdatedComponent.Get();
+	UPrimitiveComponent* UpdatedPrimitive = Params.MovingComps.UpdatedPrimitive.Get();
 	FProposedMove ProposedMove = Params.ProposedMove;
 
-	const FFGMoverInputCmd* CharacterInputs = StartState.InputCmd.InputCollection.FindDataByType<FFGMoverInputCmd>();
+	const FDaftMoverInputCmd* CharacterInputs = StartState.InputCmd.InputCollection.FindDataByType<FDaftMoverInputCmd>();
 	const FMoverDefaultSyncState* StartingSyncState = StartState.SyncState.SyncStateCollection.FindDataByType<FMoverDefaultSyncState>();
 	check(StartingSyncState);
 
@@ -101,22 +98,15 @@ void UFGWalkMode::OnSimulationTick(const FSimulationTickParams& Params, FMoverTi
 
 	const float DeltaSeconds = Params.TimeStep.StepMs * 0.001f;
 
-	// Instantaneous movement changes that are executed and we exit before consuming any time
-	if (ProposedMove.bHasTargetLocation && FG::AttemptTeleport(UpdatedComponent, ProposedMove.TargetLocation, UpdatedComponent->GetComponentRotation(), *StartingSyncState, OutputState))
-	{
-		OutputState.MovementEndState.RemainingMs = Params.TimeStep.StepMs; 	// Give back all the time
-		return;
-	}
-
 	if(TryJump(CharacterInputs, OutputState))
 	{
-		OutputState.MovementEndState.NextModeName = FG::Modes::Air;
+		OutputState.MovementEndState.NextModeName = Daft::Modes::Air;
 	}
 
 	FMovementRecord MoveRecord;
 	MoveRecord.SetDeltaSeconds(DeltaSeconds);
 
-	UMoverBlackboard* SimBlackboard = GetBlackboard_Mutable();
+    UMoverBlackboard* SimBlackboard = GetMoverComponent()->GetSimBlackboard_Mutable();
 	SimBlackboard->Invalidate(CommonBlackboard::LastFloorResult); // Flush last floor result.
 
 	constexpr float FloorSweepDist = 1.0f;
@@ -151,7 +141,7 @@ void UFGWalkMode::OnSimulationTick(const FSimulationTickParams& Params, FMoverTi
 
 	if (!MoveDelta.IsNearlyZero() || bIsOrientationChanging)
 	{
-		UMovementUtils::TrySafeMoveUpdatedComponent(UpdatedComponent, UpdatedPrimitive, MoveDelta, OrientQuat, true, Hit, ETeleportType::None, MoveRecord);
+		UMovementUtils::TrySafeMoveUpdatedComponent(Params.MovingComps, MoveDelta, OrientQuat, true, Hit, ETeleportType::None, MoveRecord);
 	}
 
 	if (NewFloor.bWalkableFloor && UpdatedPrimitive)
@@ -162,9 +152,7 @@ void UFGWalkMode::OnSimulationTick(const FSimulationTickParams& Params, FMoverTi
 		// your movement speed isn't clamped depending on the angle of the wall.
 		// However we can do it way better now, although it may mean not using this util.
 		UMovementUtils::TryMoveToSlideAlongSurface(
-			UpdatedComponent,
-			UpdatedPrimitive,
-			GetMoverComponent(),
+			FMovingComponentSet(GetMoverComponent()),
 			MoveDelta,
 			1.f - Hit.Time,
 			OrientQuat,
@@ -175,23 +163,25 @@ void UFGWalkMode::OnSimulationTick(const FSimulationTickParams& Params, FMoverTi
 	}
 	else
 	{
-		OutputState.MovementEndState.NextModeName = FG::Modes::Air;
+		OutputState.MovementEndState.NextModeName = Daft::Modes::Air;
 	}
 
-	FG::CaptureFinalState(UpdatedComponent, MoveRecord, *StartingSyncState, OutputSyncState, DeltaSeconds);
+	Daft::CaptureFinalState(UpdatedComponent, MoveRecord, *StartingSyncState, OutputSyncState, DeltaSeconds);
 }
 
-bool UFGWalkMode::TryJump(const FFGMoverInputCmd* InputCmd, FMoverTickEndData& OutputState)
+bool UDaftWalkMode::TryJump(const FDaftMoverInputCmd* InputCmd, FMoverTickEndData& OutputState)
 {
 	if(!InputCmd->bIsJumpPressed)
 	{
 		return false;
 	}
 
+#if 0
 	TSharedPtr<FLayeredMove_JumpImpulse> JumpMove = MakeShared<FLayeredMove_JumpImpulse>();
-	JumpMove->UpwardsSpeed = FG::CVars::JumpForce;
+	JumpMove->UpwardsSpeed = Daft::CVars::JumpForce;
 	OutputState.SyncState.LayeredMoves.QueueLayeredMove(JumpMove);
-	OutputState.MovementEndState.NextModeName = FG::Modes::Air;
+	OutputState.MovementEndState.NextModeName = Daft::Modes::Air;
+#endif
 
 	return true;
 }

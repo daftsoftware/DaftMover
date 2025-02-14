@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2024 Daft Software
+﻿// Copyright (c) 2025 Daft Software
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -12,13 +12,13 @@
 #include "MoverSimulationTypes.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "MoveLibrary/MovementRecord.h"
-#include "FGMovementUtils.generated.h"
+#include "DaftMovementUtils.generated.h"
 
-class UFGMoverComponent;
+class UDaftMoverComponent;
 struct FProposedMove;
 
 // @TODO: Remove or put into MovementUtils class.
-namespace FG
+namespace Daft
 {
 	FORCEINLINE bool AttemptTeleport(USceneComponent* UpdatedComponent, const FVector& TeleportPos, const FRotator& TeleportRot, const FMoverDefaultSyncState& StartingSyncState, FMoverTickEndData& Output)
 	{
@@ -59,7 +59,7 @@ namespace FG
  * Mover utility functions.
  */
 UCLASS()
-class FGMOVEMENT_API UFGMovementUtils : public UBlueprintFunctionLibrary
+class DAFTMOVER_API UDaftMovementUtils : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 public:
@@ -72,7 +72,7 @@ public:
 	 * @param DeltaTime - Time passed since last tick.
 	 */
 	UFUNCTION(BlueprintCallable, Category = Mover)
-	static void ApplyDamping(UFGMoverComponent* MoverComponent, FProposedMove& Move, float DeltaTime);
+	static void ApplyDamping(UDaftMoverComponent* MoverComponent, FProposedMove& Move, float DeltaTime);
 
 	/**
 	 * Project current velocity onto a direction intent, accelerating towards the
@@ -85,5 +85,5 @@ public:
 	 * @param DesiredSpeed - The speed to accelerate to.
 	 */
 	UFUNCTION(BlueprintCallable, Category = Mover)
-	static void ApplyAcceleration(UFGMoverComponent* MoverComponent, FProposedMove& Move, float DeltaTime, FVector DirectionIntent, float DesiredSpeed);
+	static void ApplyAcceleration(UDaftMoverComponent* MoverComponent, FProposedMove& Move, float DeltaTime, FVector DirectionIntent, float DesiredSpeed);
 };

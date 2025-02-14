@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Daft Software
+﻿// Copyright (c) 2025 Daft Software
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -7,15 +7,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "FGMovementDefines.h"
+#pragma once
 
-namespace FG::Modes
+namespace Daft::Modes
 {
-	const FLazyName Air		= TEXT("Air");
-	const FLazyName Walk	= TEXT("Walk");
+	extern DAFTMOVER_API const FLazyName Air;
+	extern DAFTMOVER_API const FLazyName Walk;
 }
 
-namespace FG::Blackboard
+namespace Daft::Blackboard 
 {
-	const FLazyName Dead	= TEXT("Dead");
+	extern DAFTMOVER_API const FLazyName Dead;
 }

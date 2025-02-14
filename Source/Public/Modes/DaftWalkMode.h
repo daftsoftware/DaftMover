@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2024 Daft Software
+﻿// Copyright (c) 2025 Daft Software
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -10,17 +10,22 @@
 #pragma once
 
 #include "MovementMode.h"
-#include "FGAirMode.generated.h"
+#include "DaftWalkMode.generated.h"
+
+struct FDaftMoverInputCmd;
 
 UCLASS()
-class FGMOVEMENT_API UFGAirMode final : public UBaseMovementMode
+class DAFTMOVER_API UDaftWalkMode final : public UBaseMovementMode
 {
 public:
 	GENERATED_BODY()
+
+	UDaftWalkMode();
 
 	//~ Begin UBaseMovementMode
 	void OnGenerateMove(const FMoverTickStartData& StartState, const FMoverTimeStep& TimeStep, FProposedMove& OutProposedMove) const override;
 	void OnSimulationTick(const FSimulationTickParams& Params, FMoverTickEndData& OutputState) override;
 	//~ End UBaseMovementMode
 
+	bool TryJump(const FDaftMoverInputCmd* InputCmd, FMoverTickEndData& OutputState);
 };

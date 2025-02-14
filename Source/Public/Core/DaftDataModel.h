@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2024 Daft Software
+﻿// Copyright (c) 2025 Daft Software
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -10,14 +10,14 @@
 #pragma once
 
 #include "MoverDataModelTypes.h"
-#include "FGDataModel.generated.h"
+#include "DaftDataModel.generated.h"
 
 USTRUCT()
-struct FFGMoverInputCmd : public FCharacterDefaultInputs
+struct FDaftMoverInputCmd : public FCharacterDefaultInputs
 {
 	GENERATED_BODY()
 
-	FFGMoverInputCmd();
+	FDaftMoverInputCmd();
 
 	UPROPERTY(BlueprintReadWrite, Category = Mover)
 	bool bIsCrouchPressed;

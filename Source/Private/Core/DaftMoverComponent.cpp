@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2024 Daft Software
+﻿// Copyright (c) 2025 Daft Software
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -7,28 +7,28 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "Core/FGMoverComponent.h"
-#include "Modes/FGWalkMode.h"
-#include "Modes/FGAirMode.h"
-#include "FGMovementDefines.h"
+#include "Core/DaftMoverComponent.h"
+#include "Modes/DaftWalkMode.h"
+#include "Modes/DaftAirMode.h"
+#include "DaftMoverDefines.h"
 #include "Components/CapsuleComponent.h"
 #include "Logging/StructuredLog.h"
 #include "MoveLibrary/FloorQueryUtils.h"
 #include "DrawDebugHelpers.h"
-#include "FGMovementCVars.h" 
+#include "DaftMoverCVars.h" 
 
-#include UE_INLINE_GENERATED_CPP_BY_NAME(FGMoverComponent)
+#include UE_INLINE_GENERATED_CPP_BY_NAME(DaftMoverComponent)
 
-UFGMoverComponent::UFGMoverComponent()
+UDaftMoverComponent::UDaftMoverComponent()
 {
 	// Clear stock movement modes.
 	MovementModes.Reset();
-	MovementModes.Add(FG::Modes::Walk, CreateDefaultSubobject<UFGWalkMode>(TEXT("FGWalkMode")));
-	MovementModes.Add(FG::Modes::Air, CreateDefaultSubobject<UFGAirMode>(TEXT("FGAirMode")));
-	StartingMovementMode = FG::Modes::Air;
+	MovementModes.Add(Daft::Modes::Walk, CreateDefaultSubobject<UDaftWalkMode>(TEXT("DaftWalkMode")));
+	MovementModes.Add(Daft::Modes::Air, CreateDefaultSubobject<UDaftAirMode>(TEXT("DaftAirMode")));
+	StartingMovementMode = Daft::Modes::Air;
 }
 
-FVector UFGMoverComponent::GetFeetLocation()
+FVector UDaftMoverComponent::GetFeetLocation()
 {
 	if(auto* Capsule = Cast<UCapsuleComponent>(UpdatedComponent))
 	{
@@ -37,12 +37,12 @@ FVector UFGMoverComponent::GetFeetLocation()
 	return FVector::ZeroVector;
 }
 
-void UFGMoverComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UDaftMoverComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 #if ENABLE_DRAW_DEBUG
-	if(FG::CVars::DrawMovementDebug)
+	if(Daft::CVars::DrawMovementDebug)
 	{
 		FFloorCheckResult LastFloorResult;
 		GetSimBlackboard()->TryGet(CommonBlackboard::LastFloorResult, LastFloorResult);
@@ -96,20 +96,20 @@ void UFGMoverComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 	UE_LOGFMT(LogMover, Display, "IsOnGround - {Grounded}", IsOnGround());
 }
 
-bool UFGMoverComponent::IsAirborne() const
+bool UDaftMoverComponent::IsAirborne() const
 {
 	if (bHasValidCachedState)
 	{
-		return CachedLastSyncState.MovementMode == FG::Modes::Air;
+		return CachedLastSyncState.MovementMode == Daft::Modes::Air;
 	}
 	return false;
 }
 
-bool UFGMoverComponent::IsOnGround() const
+bool UDaftMoverComponent::IsOnGround() const
 {
 	if (bHasValidCachedState)
 	{
-		return CachedLastSyncState.MovementMode == FG::Modes::Walk;
+		return CachedLastSyncState.MovementMode == Daft::Modes::Walk;
 	}
 
 	return false;

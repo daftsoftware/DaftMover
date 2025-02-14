@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Daft Software
+// Copyright (c) 2025 Daft Software
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -9,6 +9,6 @@
 
 #include "Modules/ModuleInterface.h"
 
-class FFGMovementModule : public IModuleInterface {};
+class FDaftMoverModule : public IModuleInterface {};
 
-IMPLEMENT_MODULE(FFGMovementModule, FGMovement)
+IMPLEMENT_MODULE(FDaftMoverModule, DaftMover)

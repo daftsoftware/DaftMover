@@ -1,8 +1,8 @@
 {
 	"FileVersion" : 3,
 	"Version" : 1,
-	"FriendlyName" : "FGMovement",
-	"Description" : "Factory Game Movement Plugin.",
+	"FriendlyName" : "Daft Mover",
+	"Description" : "Daft Software Custom Mover.",
 	"Category" : "Gameplay",
 	"CreatedBy" : "Daft Software.",
 	"CreatedByURL" : "https://github.com/daftsoftware",
@@ -13,7 +13,7 @@
 	"Modules" :
 	[
 		{
-			"Name" : "FGMovement",
+			"Name" : "DaftMover",
 			"Type" : "Runtime",
 			"LoadingPhase" : "PreDefault"
 		}

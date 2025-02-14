@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2024 Daft Software
+﻿// Copyright (c) 2025 Daft Software
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -9,22 +9,18 @@
 
 #pragma once
 
-#include "MoverComponent.h"
-#include "FGMoverComponent.generated.h"
+#include "MovementMode.h"
+#include "DaftAirMode.generated.h"
 
 UCLASS()
-class FGMOVEMENT_API UFGMoverComponent : public UMoverComponent
+class DAFTMOVER_API UDaftAirMode final : public UBaseMovementMode
 {
-	GENERATED_BODY()
 public:
+	GENERATED_BODY()
 
-	UFGMoverComponent();
+	//~ Begin UBaseMovementMode
+	void OnGenerateMove(const FMoverTickStartData& StartState, const FMoverTimeStep& TimeStep, FProposedMove& OutProposedMove) const override;
+	void OnSimulationTick(const FSimulationTickParams& Params, FMoverTickEndData& OutputState) override;
+	//~ End UBaseMovementMode
 
-	virtual FVector GetFeetLocation();
-	
-	//~ Begin UMoverComponent
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-	virtual bool IsAirborne() const;
-	virtual bool IsOnGround() const;
-	//~ End UMoverComponent
 };

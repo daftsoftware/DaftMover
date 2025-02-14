@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2024 Daft Software
+﻿// Copyright (c) 2025 Daft Software
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -9,15 +9,22 @@
 
 #pragma once
 
-#include "MovementModeTransition.h"
-#include "FGCrouchCheck.generated.h"
+#include "MoverComponent.h"
+#include "DaftMoverComponent.generated.h"
 
 UCLASS()
-class FGMOVEMENT_API UFGCrouchCheck : public UBaseMovementModeTransition
+class DAFTMOVER_API UDaftMoverComponent : public UMoverComponent
 {
 	GENERATED_BODY()
 public:
 
-	virtual void OnTrigger(const FSimulationTickParams& Params) override;
-	virtual FTransitionEvalResult OnEvaluate(const FSimulationTickParams& Params) const override;
+	UDaftMoverComponent();
+
+	virtual FVector GetFeetLocation();
+	
+	//~ Begin UMoverComponent
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual bool IsAirborne() const;
+	virtual bool IsOnGround() const;
+	//~ End UMoverComponent
 };

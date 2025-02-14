@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2024 Daft Software
+﻿// Copyright (c) 2025 Daft Software
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -7,20 +7,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "Modes/FGAirMode.h"
+#include "Modes/DaftAirMode.h"
 
-#include "FGMovementCVars.h"
-#include "Core/FGDataModel.h"
-#include "Core/FGMovementUtils.h"
-#include "Core/FGMoverComponent.h"
-#include "FGMovementDefines.h"
+#include "DaftMoverCVars.h"
+#include "Core/DaftDataModel.h"
+#include "Core/DaftMovementUtils.h"
+#include "Core/DaftMoverComponent.h"
+#include "DaftMoverDefines.h"
 
 #include "Components/CapsuleComponent.h"
 #include "MoveLibrary/MovementUtils.h"
 #include "MoveLibrary/FloorQueryUtils.h"
 #include "Logging/StructuredLog.h"
 
-#include UE_INLINE_GENERATED_CPP_BY_NAME(FGAirMode)
+#include UE_INLINE_GENERATED_CPP_BY_NAME(DaftAirMode)
 
 /**
  * Generate a single substep of movement for the mode - remember this is sub-stepping against
@@ -32,9 +32,9 @@
  * @param TimeStep - The time step for this substep.
  * @param OutProposedMove - The proposed move to provide to the next tick that runs.
  */
-void UFGAirMode::OnGenerateMove(const FMoverTickStartData& StartState, const FMoverTimeStep& TimeStep, FProposedMove& OutProposedMove) const
+void UDaftAirMode::OnGenerateMove(const FMoverTickStartData& StartState, const FMoverTimeStep& TimeStep, FProposedMove& OutProposedMove) const
 {
-	const FFGMoverInputCmd* CharacterInputs = StartState.InputCmd.InputCollection.FindDataByType<FFGMoverInputCmd>();
+	const FDaftMoverInputCmd* CharacterInputs = StartState.InputCmd.InputCollection.FindDataByType<FDaftMoverInputCmd>();
 	const FMoverDefaultSyncState* StartingSyncState = StartState.SyncState.SyncStateCollection.FindDataByType<FMoverDefaultSyncState>();
 	check(StartingSyncState);
 
@@ -56,9 +56,9 @@ void UFGAirMode::OnGenerateMove(const FMoverTickStartData& StartState, const FMo
 
 	FVector MoveInputWS = OutProposedMove.DirectionIntent.ToOrientationRotator().RotateVector(CharacterInputs->GetMoveInput());
 	
-	UFGMovementUtils::ApplyAcceleration(CastChecked<UFGMoverComponent>(GetOuter()), OutProposedMove, DeltaTime, MoveInputWS, FG::CVars::AirSpeed);
+	UDaftMovementUtils::ApplyAcceleration(CastChecked<UDaftMoverComponent>(GetOuter()), OutProposedMove, DeltaTime, MoveInputWS, Daft::CVars::AirSpeed);
 
-	OutProposedMove.LinearVelocity -= FVector::UpVector * FG::CVars::GravitySpeed * DeltaTime;
+	OutProposedMove.LinearVelocity -= FVector::UpVector * Daft::CVars::GravitySpeed * DeltaTime;
 
     UE_LOGFMT(LogMover, Display, "Linear Velocity: {LinVel}", *OutProposedMove.LinearVelocity.ToString());
 }
@@ -72,11 +72,11 @@ void UFGAirMode::OnGenerateMove(const FMoverTickStartData& StartState, const FMo
  * @param Params - The parameters for the tick.
  * @param OutputState - The final state of the mover after the tick.
  */
-void UFGAirMode::OnSimulationTick(const FSimulationTickParams& Params, FMoverTickEndData& OutputState)
+void UDaftAirMode::OnSimulationTick(const FSimulationTickParams& Params, FMoverTickEndData& OutputState)
 {
 	const FMoverTickStartData& StartState = Params.StartState;
-	USceneComponent* UpdatedComponent = Params.UpdatedComponent;
-	UPrimitiveComponent* UpdatedPrimitive = Params.UpdatedPrimitive;
+	USceneComponent* UpdatedComponent = Params.MovingComps.UpdatedComponent.Get();
+	UPrimitiveComponent* UpdatedPrimitive = Params.MovingComps.UpdatedPrimitive.Get();
 	FProposedMove ProposedMove = Params.ProposedMove;
 
 	const FMoverDefaultSyncState* StartingSyncState = StartState.SyncState.SyncStateCollection.FindDataByType<FMoverDefaultSyncState>();
@@ -86,17 +86,10 @@ void UFGAirMode::OnSimulationTick(const FSimulationTickParams& Params, FMoverTic
 	
 	const float DeltaSeconds = Params.TimeStep.StepMs * 0.001f;
 
-	// Instantaneous movement changes that are executed and we exit before consuming any time
-	if (ProposedMove.bHasTargetLocation && FG::AttemptTeleport(UpdatedComponent, ProposedMove.TargetLocation, UpdatedComponent->GetComponentRotation(), *StartingSyncState, OutputState))
-	{
-		OutputState.MovementEndState.RemainingMs = Params.TimeStep.StepMs; 	// Give back all the time
-		return;
-	}
-
 	FMovementRecord MoveRecord;
 	MoveRecord.SetDeltaSeconds(DeltaSeconds);
 
-	UMoverBlackboard* SimBlackboard = GetBlackboard_Mutable();
+	UMoverBlackboard* SimBlackboard = GetMoverComponent()->GetSimBlackboard_Mutable();
 	SimBlackboard->Invalidate(CommonBlackboard::LastFloorResult); // Flush last floor result.
 
 	constexpr float FloorSweepDist = 1.f;
@@ -132,15 +125,13 @@ void UFGAirMode::OnSimulationTick(const FSimulationTickParams& Params, FMoverTic
 
 	if (!MoveDelta.IsNearlyZero() || bIsOrientationChanging)
 	{
-		UMovementUtils::TrySafeMoveUpdatedComponent(UpdatedComponent, UpdatedPrimitive, MoveDelta, OrientQuat, true, Hit, ETeleportType::None, MoveRecord);
+		UMovementUtils::TrySafeMoveUpdatedComponent(Params.MovingComps, MoveDelta, OrientQuat, true, Hit, ETeleportType::None, MoveRecord);
 	}
 
 	if(Hit.bBlockingHit)
 	{
 		UMovementUtils::TryMoveToSlideAlongSurface(
-			UpdatedComponent,
-			UpdatedPrimitive,
-			GetMoverComponent(),
+			FMovingComponentSet(GetMoverComponent()),
 			MoveDelta,
 			1.f - Hit.Time,
 			OrientQuat,
@@ -152,10 +143,10 @@ void UFGAirMode::OnSimulationTick(const FSimulationTickParams& Params, FMoverTic
 	
 	if(NewFloor.bWalkableFloor)
 	{
-		FMoverOnImpactParams ImpactParams(FG::Modes::Air, Hit, MoveDelta);
+		FMoverOnImpactParams ImpactParams(Daft::Modes::Air, Hit, MoveDelta);
 		GetMoverComponent()->HandleImpact(ImpactParams);
-		OutputState.MovementEndState.NextModeName = FG::Modes::Walk;
+		OutputState.MovementEndState.NextModeName = Daft::Modes::Walk;
 	}
 
-	FG::CaptureFinalState(UpdatedComponent, MoveRecord, *StartingSyncState, OutputSyncState, DeltaSeconds);
+	Daft::CaptureFinalState(UpdatedComponent, MoveRecord, *StartingSyncState, OutputSyncState, DeltaSeconds);
 }

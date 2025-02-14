@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2024 Daft Software
+﻿// Copyright (c) 2025 Daft Software
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -7,18 +7,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "Core/FGPawn.h"
-#include "Core/FGMoverComponent.h"
-#include "Core/FGDataModel.h"
-#include "FGMovementDefines.h"
+#include "Core/DaftPawn.h"
+#include "Core/DaftMoverComponent.h"
+#include "Core/DaftDataModel.h"
+#include "DaftMoverDefines.h"
 #include "InputMappingContext.h"
 #include "Components/CapsuleComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Logging/StructuredLog.h"
 
-#include UE_INLINE_GENERATED_CPP_BY_NAME(FGPawn)
+#include UE_INLINE_GENERATED_CPP_BY_NAME(DaftPawn)
 
-AFGPawn::AFGPawn()
+ADaftPawn::ADaftPawn()
 {
 	SetReplicatingMovement(false);
 	
@@ -33,10 +33,10 @@ AFGPawn::AFGPawn()
 	CameraComponent->SetupAttachment(CapsuleComponent);
 	CameraComponent->bUsePawnControlRotation = true;
 	
-	MoverComponent = CreateDefaultSubobject<UFGMoverComponent>(TEXT("MoverComponent"));
+	MoverComponent = CreateDefaultSubobject<UDaftMoverComponent>(TEXT("MoverComponent"));
 }
 
-void AFGPawn::Tick(float DeltaSeconds)
+void ADaftPawn::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
@@ -49,20 +49,17 @@ void AFGPawn::Tick(float DeltaSeconds)
 	CachedLookInput = FRotator3d::ZeroRotator;
 }
 
-void AFGPawn::Move(const FInputActionValue& Value)
+void ADaftPawn::Move(const FInputActionValue& Value)
 {
 	const FVector MoveVector = Value.Get<FVector>();
-
-	// @TODO: Base impl is clamping here, why?
-	CachedMoveInputIntent = FVector3d(MoveVector);
 }
 
-void AFGPawn::MoveCompleted(const FInputActionValue& Value)
+void ADaftPawn::MoveCompleted(const FInputActionValue& Value)
 {
-	CachedMoveInputIntent = FVector::ZeroVector;
+	ConsumeMovementInputVector();
 }
 
-void AFGPawn::Look(const FInputActionValue& Value)
+void ADaftPawn::Look(const FInputActionValue& Value)
 {
 	const FVector2D LookVector = Value.Get<FVector2D>();
 
@@ -70,36 +67,36 @@ void AFGPawn::Look(const FInputActionValue& Value)
 	CachedLookInput.Pitch = CachedTurnInput.Pitch = LookVector.Y;
 }
 
-void AFGPawn::Jump()
+void ADaftPawn::Jump()
 {
 	JumpButtonDown = true;
 }
 
-void AFGPawn::JumpCompleted()
+void ADaftPawn::JumpCompleted()
 {
 	JumpButtonDown = false;
 }
 
-void AFGPawn::Crouch()
+void ADaftPawn::Crouch()
 {
 	CrouchButtonDown = true;
 }
 
-void AFGPawn::CrouchCompleted()
+void ADaftPawn::CrouchCompleted()
 {
 	CrouchButtonDown = false;
 }
 
 // Produce input is used to build an input cmd for the frame.
-void AFGPawn::ProduceInput_Implementation(int32 SimTimeMs, FMoverInputCmdContext& OutInputCmd)
+void ADaftPawn::ProduceInput_Implementation(int32 SimTimeMs, FMoverInputCmdContext& OutInputCmd)
 {
-	FFGMoverInputCmd& CharacterInputs = OutInputCmd.InputCollection.FindOrAddMutableDataByType<FFGMoverInputCmd>();
+	FDaftMoverInputCmd& CharacterInputs = OutInputCmd.InputCollection.FindOrAddMutableDataByType<FDaftMoverInputCmd>();
 
 	if (!GetController())
 	{
 		if (GetLocalRole() == ENetRole::ROLE_Authority && GetRemoteRole() == ENetRole::ROLE_SimulatedProxy)
 		{
-			static const FFGMoverInputCmd DoNothingInput;
+			static const FDaftMoverInputCmd DoNothingInput;
 			CharacterInputs = DoNothingInput;
 		}
 		return;
@@ -111,12 +108,12 @@ void AFGPawn::ProduceInput_Implementation(int32 SimTimeMs, FMoverInputCmdContext
 
 	UE_LOGFMT(LogMover, Display, "Local - JumpButtonDown {Jumping}", JumpButtonDown);
 
-	UE_LOGFMT(LogMover, Display, "Input - {Vector}", CachedMoveInputIntent.ToString());
+	UE_LOGFMT(LogMover, Display, "Input - {Vector}", GetPendingMovementInputVector().ToString());
 
 	CharacterInputs.ControlRotation = GetControlRotation();
 	CharacterInputs.bUsingMovementBase = false;
 	CharacterInputs.OrientationIntent = IntentRotation.Vector();
 	CharacterInputs.bIsJumpPressed = JumpButtonDown;
 	CharacterInputs.bIsCrouchPressed = CrouchButtonDown;
-	CharacterInputs.SetMoveInput(EMoveInputType::DirectionalIntent, CachedMoveInputIntent);
+	CharacterInputs.SetMoveInput(EMoveInputType::DirectionalIntent, ConsumeMovementInputVector());
 }
