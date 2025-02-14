@@ -52,6 +52,7 @@ void ADaftPawn::Tick(float DeltaSeconds)
 void ADaftPawn::Move(const FInputActionValue& Value)
 {
 	const FVector MoveVector = Value.Get<FVector>();
+	AddMovementInput(MoveVector);
 }
 
 void ADaftPawn::MoveCompleted(const FInputActionValue& Value)
