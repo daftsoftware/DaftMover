@@ -2,7 +2,7 @@
 
 **Supports Unreal Engine 5.5**
 
-**! Main is not currently stable, use with extreme caution. For stable version, use the FGMovement branch !**
+**! Main is not currently stable, use at your own peril. For stable version, use the FGMovement branch !**
 
 Custom implementation ontop of Mover.
 
